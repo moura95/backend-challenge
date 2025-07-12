@@ -5,10 +5,26 @@
 package sqlc
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type Email struct {
+	Uuid        uuid.UUID
+	ToEmail     string
+	Subject     string
+	Body        string
+	Type        string
+	Status      string
+	Attempts    int32
+	MaxAttempts int32
+	ErrorMsg    sql.NullString
+	SentAt      sql.NullTime
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
 
 type User struct {
 	Uuid      uuid.UUID
