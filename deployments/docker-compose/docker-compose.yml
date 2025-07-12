@@ -10,7 +10,7 @@ services:
       timeout: 10s
       retries: 10
     environment:
-      - POSTGRES_DB=challenge-db
+      - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_ROOT_PASSWORD=postgres
@@ -23,9 +23,9 @@ services:
     image: migrate/migrate
     volumes:
       - type: bind
-        source: ../../infra/database/migrations
+        source: ../../../../internal/infra/database/migrations
         target: /migrations
-    command: [ "-path", "/migrations", "-database", "postgres://postgres:postgres@psql:5432/challenge-db?sslmode=disable", "up" ]
+    command: [ "-path", "/migrations", "-database", "postgres://postgres:postgres@psql:5432/postgres?sslmode=disable", "up" ]
     depends_on:
       psql:
         condition: service_healthy
