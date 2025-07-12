@@ -14,10 +14,6 @@ SELECT password
 FROM users
 WHERE uuid = $1;
 
--- name: GetUserByEmail :one
-SELECT *
-FROM users
-WHERE email = $1;
 
 -- name: RemoveUserByID :one
 DELETE
@@ -28,7 +24,7 @@ RETURNING *;
 
 -- name: UpdateUserByUUID :exec
 UPDATE users
-SET cpf        = COALESCE(sqlc.narg('cpf'), cpf),
+SET
     name   = COALESCE(sqlc.narg('name'), name),
     email = COALESCE(sqlc.narg('email'), email),
     updated_at = NOW()

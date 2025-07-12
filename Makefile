@@ -18,6 +18,8 @@ up:
 	docker-compose up -d
 	make migrate-up
 
+sqlc:
+	sqlc generate
 
 run:
 	go run cmd/main.go
