@@ -5,16 +5,23 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
+	"github.com/moura95/backend-challenge/internal/application/services/auth"
+	"github.com/moura95/backend-challenge/internal/application/services/user"
+	authUC "github.com/moura95/backend-challenge/internal/application/usecases/auth"
+	userUC "github.com/moura95/backend-challenge/internal/application/usecases/user"
 	"github.com/moura95/backend-challenge/internal/infra/config"
+	"github.com/moura95/backend-challenge/internal/infra/repository/adapters"
+	"github.com/moura95/backend-challenge/internal/infra/security/jwt"
+	"github.com/moura95/backend-challenge/internal/interfaces/http/handlers"
+	"github.com/moura95/backend-challenge/internal/interfaces/http/middlewares"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/swag/example/basic/docs"
-
 	"go.uber.org/zap"
 )
 
 type Server struct {
-	//store  *repository.Querier
 	router *gin.Engine
 	config *config.Config
 	logger *zap.SugaredLogger
@@ -22,7 +29,7 @@ type Server struct {
 
 // @title           Backend Challenge
 // @version         1.0
-// @description     desc
+// @description     Backend Challenge API
 // @termsOfService  http://swagger.io/terms/
 
 // @contact.name   API Support
@@ -31,21 +38,16 @@ type Server struct {
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host      localhost:8080
-// @BasePath  /api/v1
-// func NewServer(cfg config.Config, store repository.Querier, log *zap.SugaredLogger) *Server {
-func NewServer(cfg config.Config, log *zap.SugaredLogger) *Server {
-
+// @host      localhost:6000
+// @BasePath  /api
+func NewServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger) *Server {
 	server := &Server{
-		//store:  &store,
 		config: &cfg,
 		logger: log,
 	}
-	var router *gin.Engine
 
-	router = gin.Default()
-
-	docs.SwaggerInfo.BasePath = ""
+	router := gin.Default()
+	docs.SwaggerInfo.BasePath = "/api"
 
 	router.GET("/healthz", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
@@ -53,48 +55,86 @@ func NewServer(cfg config.Config, log *zap.SugaredLogger) *Server {
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	//router.Use(middleware.RateLimitMiddleware())
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowCredentials = true
-	corsConfig.AddAllowHeaders("redirect")
 	corsConfig.AddAllowHeaders("Authorization")
 	corsConfig.AddAllowHeaders("Content-Type")
 	router.Use(cors.New(corsConfig))
 
-	//createRoutesV1(&store, server.config, router, log)
-	createRoutesV1(server.config, router, log)
+	createRoutes(cfg, db, router, log)
 
 	server.router = router
 	return server
 }
 
-// func createRoutesV1(store *repository.Querier, cfg *config.Config, router *gin.Engine, log *zap.SugaredLogger) {
-func createRoutesV1(cfg *config.Config, router *gin.Engine, log *zap.SugaredLogger) {
-	//userService := service.NewUserService(*store, *cfg, log)
+func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.SugaredLogger) {
+	// Initialize repositories
+	repositories := adapters.NewRepositories(db)
 
-	//userHandler := handler.NewUserHandler(userService, cfg, log)
+	// Initialize JWT token maker
+	tokenMaker, err := jwt.NewPasetoMaker("12345678901234567890123456789012") // 32 chars for demo
+	if err != nil {
+		log.Fatalf("Failed to create token maker: %v", err)
+	}
 
-	//apiV1 := router.Group("/api/v1")
-	//{
-	//	packages := apiV1.Group("/packages")
-	//	{
-	//		packages.GET("/:id", userHandler.GetByID)
-	//		packages.POST("", userHandler.Create)
-	//		packages.DELETE("/:id", userHandler.Delete)
-	//	}
-	//
-	//}
+	// Initialize use cases
+	// Auth use cases
+	signUpUC := authUC.NewSignUpUseCase(repositories.User, tokenMaker)
+	signInUC := authUC.NewSignInUseCase(repositories.User, tokenMaker)
+	verifyTokenUC := authUC.NewVerifyTokenUseCase(repositories.User, tokenMaker)
+
+	// User use cases
+	getUserProfileUC := userUC.NewGetUserProfileUseCase(repositories.User)
+	updateUserUC := userUC.NewUpdateUserUseCase(repositories.User)
+	deleteUserUC := userUC.NewDeleteUserUseCase(repositories.User)
+	listUsersUC := userUC.NewListUsersUseCase(repositories.User)
+
+	// TODO: Email use cases (will be implemented later)
+	// sendWelcomeEmailUC := emailUC.NewSendWelcomeEmailUseCase(repositories.Email, emailPublisher)
+
+	// Initialize services
+	authService := auth.NewAuthService(signUpUC, signInUC, verifyTokenUC, nil) // nil for email use case for now
+	userService := user.NewUserService(getUserProfileUC, updateUserUC, deleteUserUC, listUsersUC)
+
+	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(authService)
+	userHandler := handlers.NewUserHandler(userService)
+
+	// Public routes
+	api := router.Group("/api")
+	{
+		authRoutes := api.Group("/auth")
+		{
+			authRoutes.POST("/signup", authHandler.SignUp)
+			authRoutes.POST("/signin", authHandler.SignIn)
+		}
+	}
+
+	// Protected routes
+	protected := api.Group("")
+	protected.Use(middlewares.AuthMiddleware(authService))
+	{
+		account := protected.Group("/account")
+		{
+			account.GET("/me", userHandler.GetProfile)
+			account.PUT("/me", userHandler.UpdateProfile)
+			account.DELETE("/me", userHandler.DeleteProfile)
+		}
+
+		// Bonus routes
+		protected.GET("/users", userHandler.ListUsers)
+	}
 }
 
 func (s *Server) Start(address string) error {
+	s.logger.Infof("Starting server on %s", address)
 	return s.router.Run(address)
 }
 
-// func RunGinServer(cfg config.Config, store repository.Querier, log *zap.SugaredLogger) {
-func RunGinServer(cfg config.Config, log *zap.SugaredLogger) {
-	//server := NewServer(cfg, store, log)
-	server := NewServer(cfg, log)
-
-	_ = server.Start(cfg.HTTPServerAddress)
+func RunGinServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger) {
+	server := NewServer(cfg, db, log)
+	if err := server.Start(cfg.HTTPServerAddress); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }

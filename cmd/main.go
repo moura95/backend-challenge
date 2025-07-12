@@ -4,28 +4,36 @@ import (
 	"log"
 
 	"github.com/moura95/backend-challenge/internal/infra/config"
+	"github.com/moura95/backend-challenge/internal/infra/database/postgres"
 	"github.com/moura95/backend-challenge/internal/infra/http/gin"
 	"go.uber.org/zap"
 )
 
 func main() {
-	// Configs
-	loadConfig, _ := config.LoadConfig(".")
+	// Load configuration
+	loadConfig, err := config.LoadConfig(".")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
 
-	// instance Db
-	//conn, err := postgres.ConnectPostgres()
-	////store := conn.DB()
-	////if err != nil {
-	////	fmt.Println("Failed to Connected Database")
-	////	panic(err)
-	////}
-	log.Print("connection is repository establish")
+	// Initialize database connection
+	conn, err := postgres.ConnectPostgres()
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer conn.Close()
 
-	// Zap Logger
-	logger, _ := zap.NewProduction()
+	db := conn.DB()
+	log.Print("Database connection established")
+
+	// Initialize logger
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalf("Failed to initialize logger: %v", err)
+	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	// Run Gin
-	gin.RunGinServer(loadConfig, sugar)
+	// Run HTTP server
+	gin.RunGinServer(loadConfig, db, sugar)
 }
