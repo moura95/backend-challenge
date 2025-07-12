@@ -1,22 +1,16 @@
 include .env
 
 migrate-up:
-	migrate -database ${DB_SOURCE} -path internal/infra/database/migration up
+	migrate -database ${DB_SOURCE} -path internal/infra/database/migrations up
 
 migrate-down:
-	migrate -database ${DB_SOURCE} -path internal/infra/database/migration down --all
-
-migrate-create:
-	@read -p "name of migration: " name; \
-	migrate create -dir db/migration -ext sql -seq $$name
-
+	migrate -database ${DB_SOURCE} -path internal/infra/database/migrations down --all
 
 down:
-	docker-compose down --volumes && docker volume prune -f
+	docker compose -f deployments/docker-compose/docker-compose.yml down --volumes && docker volume prune -f
 
 up:
-	docker-compose up -d
-	make migrate-up
+	docker compose -f deployments/docker-compose/docker-compose.yml up -d
 
 sqlc:
 	sqlc generate
@@ -40,4 +34,4 @@ restart:
 swag:
 	swag init -g cmd/main.go
 
-.PHONY: migrate-up migrate-down migrate-create down up sqlc start run restart swag
+.PHONY: migrate-up migrate-down down up sqlc start run restart swag
