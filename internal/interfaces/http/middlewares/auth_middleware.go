@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	authSvc "github.com/moura95/backend-challenge/internal/application/services/auth"
+	authUC "github.com/moura95/backend-challenge/internal/application/usecases/auth"
 	"github.com/moura95/backend-challenge/pkg/ginx"
 )
 
@@ -15,7 +15,7 @@ const (
 	userIDKey               = "user_id"
 )
 
-func AuthMiddleware(authService *authSvc.AuthService) gin.HandlerFunc {
+func AuthMiddleware(verifyTokenUseCase *authUC.VerifyTokenUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authorizationHeader := c.GetHeader(authorizationHeaderKey)
 
@@ -40,7 +40,8 @@ func AuthMiddleware(authService *authSvc.AuthService) gin.HandlerFunc {
 		}
 
 		accessToken := fields[1]
-		user, err := authService.VerifyToken(c.Request.Context(), accessToken)
+
+		user, err := verifyTokenUseCase.Execute(c.Request.Context(), accessToken)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, ginx.ErrorResponse("middleware: invalid or expired token"))
 			c.Abort()

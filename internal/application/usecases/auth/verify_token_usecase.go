@@ -22,11 +22,18 @@ func NewVerifyTokenUseCase(userRepo user.Repository, tokenMaker jwt.Maker) *Veri
 }
 
 func (uc *VerifyTokenUseCase) Execute(ctx context.Context, token string) (*user.User, error) {
+	// 1. Validar entrada
+	if token == "" {
+		return nil, fmt.Errorf("usecase: verify token failed: token is required")
+	}
+
+	// 2. Verificar e decodificar token
 	payload, err := uc.tokenMaker.VerifyToken(token)
 	if err != nil {
 		return nil, fmt.Errorf("usecase: verify token failed: invalid token")
 	}
 
+	// 3. Extrair user ID do payload
 	userID, err := uuid.Parse(payload.UserUUID)
 	if err != nil {
 		return nil, fmt.Errorf("usecase: verify token failed: invalid user ID in token")
@@ -36,6 +43,5 @@ func (uc *VerifyTokenUseCase) Execute(ctx context.Context, token string) (*user.
 	if err != nil {
 		return nil, fmt.Errorf("usecase: verify token failed: user not found")
 	}
-
 	return foundUser, nil
 }

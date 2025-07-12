@@ -35,14 +35,12 @@ func NewSignInUseCase(userRepo user.Repository, tokenMaker jwt.Maker) *SignInUse
 }
 
 func (uc *SignInUseCase) Execute(ctx context.Context, req SignInRequest) (*SignInResponse, error) {
-	if strings.TrimSpace(req.Email) == "" {
-		return nil, fmt.Errorf("usecase: signin failed: email is required")
+	// 1. Validar entrada
+	if err := uc.validateSignInRequest(req); err != nil {
+		return nil, fmt.Errorf("usecase: signin failed: %w", err)
 	}
 
-	if strings.TrimSpace(req.Password) == "" {
-		return nil, fmt.Errorf("usecase: signin failed: password is required")
-	}
-
+	// 2. Buscar usuário por email
 	foundUser, err := uc.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, fmt.Errorf("usecase: signin failed: invalid credentials")
@@ -53,6 +51,7 @@ func (uc *SignInUseCase) Execute(ctx context.Context, req SignInRequest) (*SignI
 		return nil, fmt.Errorf("usecase: signin failed: invalid credentials")
 	}
 
+	// 4. Gerar token de autenticação
 	token, _, err := uc.tokenMaker.CreateToken(foundUser.ID, uc.tokenDuration)
 	if err != nil {
 		return nil, fmt.Errorf("usecase: signin failed: token generation error: %w", err)
@@ -64,4 +63,16 @@ func (uc *SignInUseCase) Execute(ctx context.Context, req SignInRequest) (*SignI
 	}
 
 	return response, nil
+}
+
+func (uc *SignInUseCase) validateSignInRequest(req SignInRequest) error {
+	if strings.TrimSpace(req.Email) == "" {
+		return fmt.Errorf("email is required")
+	}
+
+	if strings.TrimSpace(req.Password) == "" {
+		return fmt.Errorf("password is required")
+	}
+
+	return nil
 }

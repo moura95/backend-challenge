@@ -6,8 +6,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
-	"github.com/moura95/backend-challenge/internal/application/services/auth"
-	"github.com/moura95/backend-challenge/internal/application/services/user"
 	authUC "github.com/moura95/backend-challenge/internal/application/usecases/auth"
 	userUC "github.com/moura95/backend-challenge/internal/application/usecases/user"
 	"github.com/moura95/backend-challenge/internal/infra/config"
@@ -78,9 +76,13 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 		log.Fatalf("Failed to create token maker: %v", err)
 	}
 
-	// Initialize use cases
 	// Auth use cases
-	signUpUC := authUC.NewSignUpUseCase(repositories.User, tokenMaker)
+	signUpUC := authUC.NewSignUpUseCase(
+		repositories.User,
+		repositories.Email,
+		tokenMaker,
+		nil, // email publisher será configurado depois
+	)
 	signInUC := authUC.NewSignInUseCase(repositories.User, tokenMaker)
 	verifyTokenUC := authUC.NewVerifyTokenUseCase(repositories.User, tokenMaker)
 
@@ -90,16 +92,18 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 	deleteUserUC := userUC.NewDeleteUserUseCase(repositories.User)
 	listUsersUC := userUC.NewListUsersUseCase(repositories.User)
 
-	// TODO: Email use cases (will be implemented later)
-	// sendWelcomeEmailUC := emailUC.NewSendWelcomeEmailUseCase(repositories.Email, emailPublisher)
+	// Email use cases
+	//sendWelcomeEmailUC := emailUC.NewSendWelcomeEmailUseCase(
+	//	repositories.Email,
+	//	nil, // email publisher será configurado depois
+	//)
+	//processEmailQueueUC := emailUC.NewProcessEmailQueueUseCase(
+	//	repositories.Email,
+	//	nil, // email sender será configurado depois
+	//)
 
-	// Initialize services
-	authService := auth.NewAuthService(signUpUC, signInUC, verifyTokenUC, nil) // nil for email use case for now
-	userService := user.NewUserService(getUserProfileUC, updateUserUC, deleteUserUC, listUsersUC)
-
-	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(authService)
-	userHandler := handlers.NewUserHandler(userService)
+	authHandler := handlers.NewAuthHandler(signUpUC, signInUC, verifyTokenUC)
+	userHandler := handlers.NewUserHandler(getUserProfileUC, updateUserUC, deleteUserUC, listUsersUC)
 
 	// Public routes
 	api := router.Group("/api")
@@ -113,7 +117,7 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 
 	// Protected routes
 	protected := api.Group("")
-	protected.Use(middlewares.AuthMiddleware(authService))
+	protected.Use(middlewares.AuthMiddleware(verifyTokenUC))
 	{
 		account := protected.Group("/account")
 		{
