@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	userUC "github.com/moura95/backend-challenge/internal/application/usecases/user"
 	userDomain "github.com/moura95/backend-challenge/internal/domain/user"
+	"github.com/moura95/backend-challenge/internal/interfaces/http/ginx"
 	"github.com/moura95/backend-challenge/internal/interfaces/http/middlewares"
-	"github.com/moura95/backend-challenge/pkg/ginx"
 )
 
 type UserHandler struct {

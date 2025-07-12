@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	authUC "github.com/moura95/backend-challenge/internal/application/usecases/auth"
 	"github.com/moura95/backend-challenge/internal/domain/user"
-	"github.com/moura95/backend-challenge/pkg/ginx"
+	"github.com/moura95/backend-challenge/internal/interfaces/http/ginx"
 )
 
 type AuthHandler struct {

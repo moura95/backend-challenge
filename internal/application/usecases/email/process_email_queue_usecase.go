@@ -111,7 +111,6 @@ func (uc *ProcessEmailQueueUseCase) markEmailAsSent(ctx context.Context, emailEn
 	return nil
 }
 
-// ProcessPendingEmails processa emails pendentes em lote
 func (uc *ProcessEmailQueueUseCase) ProcessPendingEmails(ctx context.Context, batchSize int) error {
 	pendingEmails, err := uc.emailRepo.GetPendingEmails(ctx, batchSize)
 	if err != nil {
