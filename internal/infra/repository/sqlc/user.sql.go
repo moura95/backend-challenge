@@ -8,13 +8,14 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, password, name)
-VALUES ($1, $2,$3)
+VALUES ($1, $2, $3)
 RETURNING uuid, name, email, password, created_at, updated_at
 `
 
@@ -26,6 +27,37 @@ type CreateUserParams struct {
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.Password, arg.Name)
+	var i User
+	err := row.Scan(
+		&i.Uuid,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const emailExists = `-- name: EmailExists :one
+SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
+`
+
+func (q *Queries) EmailExists(ctx context.Context, email string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, emailExists, email)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT uuid, name, email, password, created_at, updated_at
+FROM users
+WHERE email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.Uuid,
@@ -69,6 +101,64 @@ func (q *Queries) GetUserPasswordByID(ctx context.Context, argUuid uuid.UUID) (s
 	var password string
 	err := row.Scan(&password)
 	return password, err
+}
+
+const listUsers = `-- name: ListUsers :many
+SELECT uuid, name, email, created_at, updated_at
+FROM users
+WHERE
+    CASE
+        WHEN $1::text IS NOT NULL THEN
+            (name ILIKE '%' || $1::text || '%' OR
+             email ILIKE '%' || $1::text || '%')
+        ELSE TRUE
+        END
+ORDER BY created_at DESC
+LIMIT $3::int
+    OFFSET $2::int
+`
+
+type ListUsersParams struct {
+	Search sql.NullString
+	Offset sql.NullInt32
+	Limit  sql.NullInt32
+}
+
+type ListUsersRow struct {
+	Uuid      uuid.UUID
+	Name      string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
+	rows, err := q.db.QueryContext(ctx, listUsers, arg.Search, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUsersRow
+	for rows.Next() {
+		var i ListUsersRow
+		if err := rows.Scan(
+			&i.Uuid,
+			&i.Name,
+			&i.Email,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const removeUserByID = `-- name: RemoveUserByID :one
