@@ -41,6 +41,11 @@ func (uc *ProcessEmailQueueUseCase) Execute(ctx context.Context, message email.Q
 		return err
 	}
 
+	if emailEntity.Status == email.StatusSent {
+		fmt.Printf("Email ID %s already sent, skipping\n", emailEntity.ID.String())
+		return nil
+	}
+
 	// 3. Tentar enviar email
 	err = uc.attemptEmailSend(ctx, emailEntity)
 	if err != nil {
