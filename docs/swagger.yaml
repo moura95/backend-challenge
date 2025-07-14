@@ -1,0 +1,252 @@
+definitions:
+  auth.SignInRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  auth.SignUpRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  ginx.Response:
+    properties:
+      data: {}
+      error: {}
+    type: object
+  handlers.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/user.UserResponse'
+    type: object
+  handlers.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    type: object
+  user.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /account/me:
+    delete:
+      description: Delete current user account
+      responses:
+        "204":
+          description: No content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginx.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginx.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete user profile
+      tags:
+      - user
+    get:
+      description: Get current user profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.UserResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginx.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginx.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: Update current user profile information
+      parameters:
+      - description: Update user request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.UserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginx.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ginx.Response'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - user
+  /auth/signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return token
+      parameters:
+      - description: Sign in request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginx.Response'
+      summary: Sign in user
+      tags:
+      - auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: Sign up request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginx.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ginx.Response'
+      summary: Sign up a new user
+      tags:
+      - auth
+  /users:
+    get:
+      description: Get paginated list of users with optional search
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Search by name or email
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ginx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginx.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginx.Response'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - user
+swagger: "2.0"

@@ -39,7 +39,7 @@ func NewAuthHandler(
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body authUC.SignUpRequest true "Sign up request"
+// @Param request body auth.SignUpRequest true "Sign up request"
 // @Success 201 {object} ginx.Response{data=AuthResponse}
 // @Failure 400 {object} ginx.Response
 // @Failure 409 {object} ginx.Response
@@ -71,7 +71,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body authUC.SignInRequest true "Sign in request"
+// @Param request body auth.SignInRequest true "Sign in request"
 // @Success 200 {object} ginx.Response{data=AuthResponse}
 // @Failure 400 {object} ginx.Response
 // @Failure 401 {object} ginx.Response
