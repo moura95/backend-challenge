@@ -9,6 +9,7 @@ import (
 	authUC "github.com/moura95/backend-challenge/internal/application/usecases/auth"
 	userUC "github.com/moura95/backend-challenge/internal/application/usecases/user"
 	"github.com/moura95/backend-challenge/internal/infra/config"
+	"github.com/moura95/backend-challenge/internal/infra/messaging/queues"
 	"github.com/moura95/backend-challenge/internal/infra/repository/adapters"
 	"github.com/moura95/backend-challenge/internal/infra/security/jwt"
 	"github.com/moura95/backend-challenge/internal/interfaces/http/handlers"
@@ -20,9 +21,10 @@ import (
 )
 
 type Server struct {
-	router *gin.Engine
-	config *config.Config
-	logger *zap.SugaredLogger
+	router     *gin.Engine
+	config     *config.Config
+	logger     *zap.SugaredLogger
+	emailQueue *queues.EmailQueue
 }
 
 // @title           Backend Challenge
@@ -38,10 +40,11 @@ type Server struct {
 
 // @host      localhost:6000
 // @BasePath  /api
-func NewServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger) *Server {
+func NewServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger, emailQueue *queues.EmailQueue) *Server {
 	server := &Server{
-		config: &cfg,
-		logger: log,
+		config:     &cfg,
+		logger:     log,
+		emailQueue: emailQueue,
 	}
 
 	router := gin.Default()
@@ -60,13 +63,13 @@ func NewServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger) *Server {
 	corsConfig.AddAllowHeaders("Content-Type")
 	router.Use(cors.New(corsConfig))
 
-	createRoutes(cfg, db, router, log)
+	createRoutes(cfg, db, router, log, emailQueue)
 
 	server.router = router
 	return server
 }
 
-func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.SugaredLogger) {
+func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.SugaredLogger, emailQueue *queues.EmailQueue) {
 	// Initialize repositories
 	repositories := adapters.NewRepositories(db)
 
@@ -81,7 +84,7 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 		repositories.User,
 		repositories.Email,
 		tokenMaker,
-		nil, // email publisher será configurado depois
+		emailQueue,
 	)
 	signInUC := authUC.NewSignInUseCase(repositories.User, tokenMaker)
 	verifyTokenUC := authUC.NewVerifyTokenUseCase(repositories.User, tokenMaker)
@@ -92,15 +95,12 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 	deleteUserUC := userUC.NewDeleteUserUseCase(repositories.User)
 	listUsersUC := userUC.NewListUsersUseCase(repositories.User)
 
-	// Email use cases
-	//sendWelcomeEmailUC := emailUC.NewSendWelcomeEmailUseCase(
-	//	repositories.Email,
-	//	nil, // email publisher será configurado depois
-	//)
-	//processEmailQueueUC := emailUC.NewProcessEmailQueueUseCase(
-	//	repositories.Email,
-	//	nil, // email sender será configurado depois
-	//)
+	// TODO: Email processing use case (for RabbitMQ Consumer)
+	// Will be implemented when Consumer is ready
+	// processEmailQueueUC := emailUC.NewProcessEmailQueueUseCase(
+	//     repositories.Email,
+	//     smtpService, // SMTP sender
+	// )
 
 	authHandler := handlers.NewAuthHandler(signUpUC, signInUC, verifyTokenUC)
 	userHandler := handlers.NewUserHandler(getUserProfileUC, updateUserUC, deleteUserUC, listUsersUC)
@@ -129,6 +129,7 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 		// Bonus routes
 		protected.GET("/users", userHandler.ListUsers)
 	}
+
 }
 
 func (s *Server) Start(address string) error {
@@ -136,8 +137,9 @@ func (s *Server) Start(address string) error {
 	return s.router.Run(address)
 }
 
-func RunGinServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger) {
-	server := NewServer(cfg, db, log)
+func RunGinServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger, emailQueue *queues.EmailQueue) {
+	server := NewServer(cfg, db, log, emailQueue)
+
 	if err := server.Start(cfg.HTTPServerAddress); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

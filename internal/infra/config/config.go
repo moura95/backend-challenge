@@ -9,10 +9,7 @@ type Config struct {
 	HTTPServerAddress string `mapstructure:"HTTP_SERVER_ADDRESS"`
 
 	// RabbitMQ Configuration
-	RabbitMQURL             string `mapstructure:"RABBITMQ_URL"`
-	RabbitMQExchange        string `mapstructure:"RABBITMQ_EXCHANGE"`
-	RabbitMQQueueEmail      string `mapstructure:"RABBITMQ_QUEUE_EMAIL"`
-	RabbitMQRoutingKeyEmail string `mapstructure:"RABBITMQ_ROUTING_KEY_EMAIL"`
+	RabbitMQURL string `mapstructure:"RABBITMQ_URL"`
 
 	// SMTP Configuration
 	SMTPHost string `mapstructure:"SMTP_HOST"`
