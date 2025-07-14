@@ -119,7 +119,6 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 			account.DELETE("/me", userHandler.DeleteProfile)
 		}
 
-		// Bonus routes
 		protected.GET("/users", userHandler.ListUsers)
 	}
 
