@@ -7,6 +7,7 @@ import (
 	"time"
 
 	emailUC "github.com/moura95/backend-challenge/internal/application/usecases/email"
+	"github.com/moura95/backend-challenge/internal/domain/email"
 	"github.com/moura95/backend-challenge/internal/infra/config"
 	"github.com/moura95/backend-challenge/internal/infra/database/postgres"
 	"github.com/moura95/backend-challenge/internal/infra/email/smtp"
@@ -94,7 +95,14 @@ func startEmailConsumer(
 	logger *zap.SugaredLogger,
 ) {
 	// Setup SMTP service
-	smtpService := smtp.NewSMTPServiceDev(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom)
+	smtpService := smtp.NewSMTPService(
+		email.SMTPConfig{
+			Host:     cfg.SMTPHost,
+			Port:     cfg.SMTPPort,
+			Username: "",
+			Password: "",
+			From:     cfg.SMTPFrom,
+		})
 
 	// Setup email processing use case
 	processEmailUC := emailUC.NewProcessEmailQueueUseCase(
