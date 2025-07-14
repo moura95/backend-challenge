@@ -315,8 +315,6 @@ make rabbitmq         # Abre RabbitMQ Management
 - **Use case tests** com Testcontainers
 
 ## 👨‍💻 Autor
-
-**Seu Nome** - *Backend Engineer*
 - GitHub: [@moura95](https://github.com/moura95)
 - LinkedIn: [Guilherme Moura](https://www.linkedin.com/in/guilherme-moura95/)
 - Email: junior.moura19@hotmail.com
