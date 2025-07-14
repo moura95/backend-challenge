@@ -34,4 +34,33 @@ restart:
 swag:
 	swag init -g cmd/main.go
 
-.PHONY: migrate-up migrate-down down up sqlc start run restart swag
+# Testing
+test:
+	go test -v ./...
+
+test-domain:
+	go test -v ./internal/domain/...
+
+test-coverage:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+# Code Quality
+fmt:
+	go fmt ./...
+
+vet:
+	go vet ./...
+
+# Docker
+build:
+	docker build -t backend-challenge:latest -f deployments/build/Dockerfile .
+
+# Complete workflows
+ci:
+	make fmt
+	make vet
+	make test
+	make build
+
+.PHONY: migrate-up migrate-down down up sqlc start run restart swag test test-domain test-coverage fmt vet build ci
