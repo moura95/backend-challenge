@@ -126,8 +126,8 @@ func (uc *ProcessEmailQueueUseCase) ProcessPendingEmails(ctx context.Context, ba
 
 	for _, emailEntity := range pendingEmails {
 		message := email.QueueMessage{
-			EmailID: emailEntity.ID,
 			Type:    emailEntity.Type,
+			EmailID: emailEntity.ID,
 		}
 
 		err := uc.Execute(ctx, message)

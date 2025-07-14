@@ -46,17 +46,18 @@ func (uc *SendWelcomeEmailUseCase) Execute(ctx context.Context, req SendWelcomeE
 		return nil, fmt.Errorf("usecase: send welcome email failed: %w", err)
 	}
 
-	// 3. Persistir na base (para auditoria e controle)
+	// 3. Salvar no banco
 	err = uc.emailRepo.Create(ctx, emailEntity)
 	if err != nil {
 		return nil, fmt.Errorf("usecase: send welcome email failed: %w", err)
 	}
 
-	// 4. Orquestrar envio (síncrono ou assíncrono)
-	err = uc.orchestrateEmailDelivery(ctx, emailEntity, req)
+	// 4. Enviar para fila
+	err = uc.sendToQueue(ctx, req)
 	if err != nil {
-		// Se falhar, marcar email como falha mas não falhar o use case completo
-		uc.handleDeliveryFailure(ctx, emailEntity, err)
+		// Se falhar, marcar como falha
+		emailEntity.MarkAsFailed(err.Error())
+		uc.emailRepo.Update(ctx, emailEntity)
 		return nil, fmt.Errorf("usecase: send welcome email failed: %w", err)
 	}
 
@@ -71,10 +72,6 @@ func (uc *SendWelcomeEmailUseCase) Execute(ctx context.Context, req SendWelcomeE
 }
 
 func (uc *SendWelcomeEmailUseCase) validateRequest(req SendWelcomeEmailRequest) error {
-	if req.UserID == "" {
-		return fmt.Errorf("user ID is required")
-	}
-
 	if req.UserName == "" {
 		return fmt.Errorf("user name is required")
 	}
@@ -83,7 +80,7 @@ func (uc *SendWelcomeEmailUseCase) validateRequest(req SendWelcomeEmailRequest) 
 		return fmt.Errorf("user email is required")
 	}
 
-	// Validação adicional de email usando domain validator
+	// Validação de email
 	validator := email.NewEmailValidator()
 	if err := validator.ValidateEmail(req.UserEmail); err != nil {
 		return fmt.Errorf("invalid email format: %w", err)
@@ -107,11 +104,7 @@ func (uc *SendWelcomeEmailUseCase) createWelcomeEmail(req SendWelcomeEmailReques
 	return welcomeEmail, nil
 }
 
-func (uc *SendWelcomeEmailUseCase) orchestrateEmailDelivery(ctx context.Context, emailEntity *email.Email, req SendWelcomeEmailRequest) error {
-	return uc.sendEmailAsynchronously(ctx, emailEntity, req)
-}
-
-func (uc *SendWelcomeEmailUseCase) sendEmailAsynchronously(ctx context.Context, emailEntity *email.Email, req SendWelcomeEmailRequest) error {
+func (uc *SendWelcomeEmailUseCase) sendToQueue(ctx context.Context, req SendWelcomeEmailRequest) error {
 	if uc.publisher == nil {
 		return fmt.Errorf("email publisher not configured")
 	}
@@ -127,34 +120,6 @@ func (uc *SendWelcomeEmailUseCase) sendEmailAsynchronously(ctx context.Context, 
 		return fmt.Errorf("failed to publish welcome email to queue: %w", err)
 	}
 
-	fmt.Printf("Welcome email queued for delivery: %s\n", emailEntity.ID.String())
+	fmt.Printf("Welcome email queued for delivery: %s\n", req.UserEmail)
 	return nil
-}
-
-func (uc *SendWelcomeEmailUseCase) handleDeliveryFailure(ctx context.Context, emailEntity *email.Email, deliveryErr error) {
-	// Marcar como falha
-	emailEntity.MarkAsFailed(deliveryErr.Error())
-
-	// Tentar atualizar na base
-	updateErr := uc.emailRepo.Update(ctx, emailEntity)
-	if updateErr != nil {
-		fmt.Printf("Failed to update email status after delivery failure. Email ID: %s, Delivery error: %v, Update error: %v\n",
-			emailEntity.ID.String(), deliveryErr, updateErr)
-	}
-}
-
-func (uc *SendWelcomeEmailUseCase) SendWelcomeEmailBatch(ctx context.Context, requests []SendWelcomeEmailRequest) ([]*SendWelcomeEmailResponse, error) {
-	responses := make([]*SendWelcomeEmailResponse, 0, len(requests))
-
-	for _, req := range requests {
-		response, err := uc.Execute(ctx, req)
-		if err != nil {
-			// Log erro mas continua processando os outros
-			fmt.Printf("Failed to send welcome email for user %s: %v\n", req.UserID, err)
-			continue
-		}
-		responses = append(responses, response)
-	}
-
-	return responses, nil
 }

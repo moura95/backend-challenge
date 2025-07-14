@@ -68,18 +68,11 @@ func (uc *SignUpUseCase) Execute(ctx context.Context, req SignUpRequest) (*SignU
 		return nil, fmt.Errorf("usecase: signup failed: %w", err)
 	}
 
-	// 4. Gerar token
-	token, _, err := uc.tokenMaker.CreateToken(newUser.ID, uc.tokenDuration)
-	if err != nil {
-		return nil, fmt.Errorf("usecase: signup failed: token generation error: %w", err)
-	}
-
 	uc.publishSignUpEvents(ctx, newUser)
 
 	// 6. Retornar resposta
 	response := &SignUpResponse{
-		User:  newUser,
-		Token: token,
+		User: newUser,
 	}
 
 	return response, nil
