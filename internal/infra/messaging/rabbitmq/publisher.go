@@ -1,3 +1,4 @@
+// internal/infra/messaging/rabbitmq/publisher_functions.go
 package rabbitmq
 
 import (
@@ -11,67 +12,84 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type Publisher struct {
-	connection *Connection
-	queueName  string
-}
-
-func NewPublisher(connection *Connection, queueName string) *Publisher {
-	return &Publisher{
-		connection: connection,
-		queueName:  queueName,
-	}
-}
-
-func (p *Publisher) PublishWelcomeEmail(ctx context.Context, data email.WelcomeEmailData) error {
-	if !p.connection.IsConnected() {
-		return fmt.Errorf("publisher: RabbitMQ connection is not available")
-	}
-
-	// Create queue message
+func (c *Connection) PublishWelcomeEmail(ctx context.Context, data email.WelcomeEmailData) error {
 	message := email.QueueMessage{
 		EmailID: uuid.New(),
 		Type:    email.EmailTypeWelcome,
 		Data:    data,
 	}
 
-	// Marshal message to JSON
-	messageBody, err := json.Marshal(message)
-	if err != nil {
-		return fmt.Errorf("publisher: failed to marshal message: %w", err)
+	return c.publishToEmailQueue(message)
+}
+
+func (c *Connection) publishToEmailQueue(message interface{}) error {
+	if !c.IsConnected() {
+		return fmt.Errorf("rabbitmq: connection not available")
 	}
 
-	// Prepare AMQP message
+	// Marshal message
+	messageBody, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("rabbitmq: failed to marshal message: %w", err)
+	}
+
+	// Create AMQP message
 	amqpMessage := amqp.Publishing{
-		DeliveryMode: amqp.Persistent, // Mensagem persistente
+		DeliveryMode: amqp.Persistent,
 		Timestamp:    time.Now(),
 		ContentType:  "application/json",
 		Body:         messageBody,
-		MessageId:    message.EmailID.String(),
-		Type:         string(message.Type),
+		MessageId:    uuid.New().String(),
 	}
 
-	err = p.connection.Channel().Publish(
-		"",          // exchange = ""
-		p.queueName, // queue
-		false,       // mandatory
-		false,       // immediate
+	// Publish ONLY to email queue
+	err = c.channel.Publish(
+		"",                    // exchange (empty for direct queue)
+		"email_notifications", // routing key = queue name
+		false,                 // mandatory
+		false,                 // immediate
 		amqpMessage,
 	)
 	if err != nil {
-		return fmt.Errorf("publisher: failed to publish message: %w", err)
+		return fmt.Errorf("rabbitmq: failed to publish to email queue: %w", err)
 	}
 
-	fmt.Printf("Published welcome email message for user %s (email: %s)\n",
-		data.UserID, data.UserEmail)
-
+	fmt.Printf("Published welcome email to queue\n")
 	return nil
 }
 
-func (p *Publisher) Close() error {
-	return nil
-}
+func (c *Connection) publishToQueue(queueName string, message interface{}) error {
+	if !c.IsConnected() {
+		return fmt.Errorf("rabbitmq: connection not available")
+	}
 
-func (p *Publisher) GetQueueName() string {
-	return p.queueName
+	// Marshal message
+	messageBody, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("rabbitmq: failed to marshal message: %w", err)
+	}
+
+	// Create AMQP message
+	amqpMessage := amqp.Publishing{
+		DeliveryMode: amqp.Persistent,
+		Timestamp:    time.Now(),
+		ContentType:  "application/json",
+		Body:         messageBody,
+		MessageId:    uuid.New().String(),
+	}
+
+	// Publish to queue
+	err = c.channel.Publish(
+		"",        // exchange (empty for direct queue)
+		queueName, // routing key = queue name
+		false,     // mandatory
+		false,     // immediate
+		amqpMessage,
+	)
+	if err != nil {
+		return fmt.Errorf("rabbitmq: failed to publish to %s: %w", queueName, err)
+	}
+
+	fmt.Printf("Published message to queue: %s\n", queueName)
+	return nil
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/moura95/backend-challenge/internal/infra/config"
 	"github.com/moura95/backend-challenge/internal/infra/database/postgres"
 	"github.com/moura95/backend-challenge/internal/infra/http/gin"
-	"github.com/moura95/backend-challenge/internal/infra/messaging/queues"
 	"github.com/moura95/backend-challenge/internal/infra/messaging/rabbitmq"
 	"go.uber.org/zap"
 )
@@ -32,42 +31,31 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer conn.Close()
-
 	db := conn.DB()
 	sugar.Info("Database connection established")
 
 	// Initialize RabbitMQ connection
-	rabbitConn, emailQueue, err := setupRabbitMQ(loadConfig, sugar)
-	if err != nil {
-		sugar.Warnf("Failed to setup RabbitMQ (continuing without queue): %v", err)
-		// Continue without RabbitMQ for development
-	} else {
+	rabbitConn := setupRabbitMQ(loadConfig, sugar)
+	if rabbitConn != nil {
 		defer rabbitConn.Close()
-		defer emailQueue.Close()
 		sugar.Info("RabbitMQ connection established")
 	}
 
-	// Run HTTP server
-	gin.RunGinServer(loadConfig, db, sugar, emailQueue)
+	// Run HTTP server - Passa SÓ a conexão RabbitMQ
+	gin.RunGinServer(loadConfig, db, sugar, rabbitConn)
 }
 
-func setupRabbitMQ(cfg config.Config, logger *zap.SugaredLogger) (*rabbitmq.Connection, *queues.EmailQueue, error) {
-	// Setup RabbitMQ connection
+func setupRabbitMQ(cfg config.Config, logger *zap.SugaredLogger) *rabbitmq.Connection {
 	connectionConfig := rabbitmq.ConnectionConfig{
 		URL: cfg.RabbitMQURL,
 	}
 
 	rabbitConn, err := rabbitmq.NewConnection(connectionConfig)
 	if err != nil {
-		return nil, nil, err
+		logger.Warnf("Failed to setup RabbitMQ (continuing without messaging): %v", err)
+		return nil // App continua sem messaging
 	}
 
-	// Setup email queue
-	emailQueue := queues.NewEmailQueue(
-		rabbitConn,
-		"email_notifications",
-	)
-
-	logger.Info("RabbitMQ exchange and queues configured")
-	return rabbitConn, emailQueue, nil
+	logger.Info("RabbitMQ connection configured successfully")
+	return rabbitConn
 }

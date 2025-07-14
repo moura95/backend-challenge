@@ -9,7 +9,7 @@ import (
 	authUC "github.com/moura95/backend-challenge/internal/application/usecases/auth"
 	userUC "github.com/moura95/backend-challenge/internal/application/usecases/user"
 	"github.com/moura95/backend-challenge/internal/infra/config"
-	"github.com/moura95/backend-challenge/internal/infra/messaging/queues"
+	"github.com/moura95/backend-challenge/internal/infra/messaging/rabbitmq"
 	"github.com/moura95/backend-challenge/internal/infra/repository/adapters"
 	"github.com/moura95/backend-challenge/internal/infra/security/jwt"
 	"github.com/moura95/backend-challenge/internal/interfaces/http/handlers"
@@ -21,10 +21,10 @@ import (
 )
 
 type Server struct {
-	router     *gin.Engine
-	config     *config.Config
-	logger     *zap.SugaredLogger
-	emailQueue *queues.EmailQueue
+	router *gin.Engine
+	config *config.Config
+	logger *zap.SugaredLogger
+	rabbit *rabbitmq.Connection // 👈 SÓ o RabbitMQ!
 }
 
 // @title           Backend Challenge
@@ -40,11 +40,11 @@ type Server struct {
 
 // @host      localhost:6000
 // @BasePath  /api
-func NewServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger, emailQueue *queues.EmailQueue) *Server {
+func NewServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger, rabbit *rabbitmq.Connection) *Server {
 	server := &Server{
-		config:     &cfg,
-		logger:     log,
-		emailQueue: emailQueue,
+		config: &cfg,
+		logger: log,
+		rabbit: rabbit, // 👈 Uma dependência só!
 	}
 
 	router := gin.Default()
@@ -63,13 +63,13 @@ func NewServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger, emailQueu
 	corsConfig.AddAllowHeaders("Content-Type")
 	router.Use(cors.New(corsConfig))
 
-	createRoutes(cfg, db, router, log, emailQueue)
+	createRoutes(cfg, db, router, log, rabbit)
 
 	server.router = router
 	return server
 }
 
-func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.SugaredLogger, emailQueue *queues.EmailQueue) {
+func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.SugaredLogger, rabbit *rabbitmq.Connection) {
 	// Initialize repositories
 	repositories := adapters.NewRepositories(db)
 
@@ -79,28 +79,21 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 		log.Fatalf("Failed to create token maker: %v", err)
 	}
 
-	// Auth use cases
+	// Auth use cases - SÓ recebe a conexão RabbitMQ
 	signUpUC := authUC.NewSignUpUseCase(
 		repositories.User,
 		repositories.Email,
 		tokenMaker,
-		emailQueue,
+		rabbit, //
 	)
 	signInUC := authUC.NewSignInUseCase(repositories.User, tokenMaker)
 	verifyTokenUC := authUC.NewVerifyTokenUseCase(repositories.User, tokenMaker)
 
-	// User use cases
+	// User use cases - Também podem receber rabbit se precisarem
 	getUserProfileUC := userUC.NewGetUserProfileUseCase(repositories.User)
 	updateUserUC := userUC.NewUpdateUserUseCase(repositories.User)
 	deleteUserUC := userUC.NewDeleteUserUseCase(repositories.User)
 	listUsersUC := userUC.NewListUsersUseCase(repositories.User)
-
-	// TODO: Email processing use case (for RabbitMQ Consumer)
-	// Will be implemented when Consumer is ready
-	// processEmailQueueUC := emailUC.NewProcessEmailQueueUseCase(
-	//     repositories.Email,
-	//     smtpService, // SMTP sender
-	// )
 
 	authHandler := handlers.NewAuthHandler(signUpUC, signInUC, verifyTokenUC)
 	userHandler := handlers.NewUserHandler(getUserProfileUC, updateUserUC, deleteUserUC, listUsersUC)
@@ -130,6 +123,7 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 		protected.GET("/users", userHandler.ListUsers)
 	}
 
+	log.Info("Routes configured successfully")
 }
 
 func (s *Server) Start(address string) error {
@@ -137,8 +131,8 @@ func (s *Server) Start(address string) error {
 	return s.router.Run(address)
 }
 
-func RunGinServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger, emailQueue *queues.EmailQueue) {
-	server := NewServer(cfg, db, log, emailQueue)
+func RunGinServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger, rabbit *rabbitmq.Connection) {
+	server := NewServer(cfg, db, log, rabbit)
 
 	if err := server.Start(cfg.HTTPServerAddress); err != nil {
 		log.Fatalf("Failed to start server: %v", err)

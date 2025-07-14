@@ -27,10 +27,10 @@ func NewConnection(config ConnectionConfig) (*Connection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
-	// Setup queue email
+
 	err = conn.setupQueue("email_notifications")
 	if err != nil {
-		return nil, fmt.Errorf("failed to setup queue: %w", err)
+		return nil, fmt.Errorf("failed to setup email queue: %w", err)
 	}
 
 	return conn, nil
@@ -64,7 +64,6 @@ func (c *Connection) connect() error {
 }
 
 func (c *Connection) setupQueue(queueName string) error {
-	// Declare email queue - SEM EXCHANGE, SEM BIND!
 	_, err := c.channel.QueueDeclare(
 		queueName, // name
 		true,      // durable
@@ -76,10 +75,10 @@ func (c *Connection) setupQueue(queueName string) error {
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to declare queue: %w", err)
+		return fmt.Errorf("failed to declare email queue: %w", err)
 	}
 
-	log.Printf("Queue '%s' setup completed", queueName)
+	log.Printf("Email queue setup completed")
 	return nil
 }
 
