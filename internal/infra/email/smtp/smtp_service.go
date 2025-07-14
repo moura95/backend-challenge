@@ -57,18 +57,6 @@ func (s *SMTPService) SendEmail(ctx context.Context, emailEntity *email.Email) e
 	return nil
 }
 
-func NewSMTPServiceDev(host string, port int, from string) *SMTPService {
-	return &SMTPService{
-		config: email.SMTPConfig{
-			Host:     host,
-			Port:     port,
-			Username: "", // Sem auth para dev
-			Password: "", // Sem auth para dev
-			From:     from,
-		},
-	}
-}
-
 func (s *SMTPService) SendEmailDev(ctx context.Context, emailEntity *email.Email) error {
 
 	// Construir headers
