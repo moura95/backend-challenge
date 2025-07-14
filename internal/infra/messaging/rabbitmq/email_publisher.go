@@ -1,4 +1,3 @@
-// internal/infra/messaging/rabbitmq/publisher_functions.go
 package rabbitmq
 
 import (
@@ -55,41 +54,5 @@ func (c *Connection) publishToEmailQueue(message interface{}) error {
 	}
 
 	fmt.Printf("Published welcome email to queue\n")
-	return nil
-}
-
-func (c *Connection) publishToQueue(queueName string, message interface{}) error {
-	if !c.IsConnected() {
-		return fmt.Errorf("rabbitmq: connection not available")
-	}
-
-	// Marshal message
-	messageBody, err := json.Marshal(message)
-	if err != nil {
-		return fmt.Errorf("rabbitmq: failed to marshal message: %w", err)
-	}
-
-	// Create AMQP message
-	amqpMessage := amqp.Publishing{
-		DeliveryMode: amqp.Persistent,
-		Timestamp:    time.Now(),
-		ContentType:  "application/json",
-		Body:         messageBody,
-		MessageId:    uuid.New().String(),
-	}
-
-	// Publish to queue
-	err = c.channel.Publish(
-		"",        // exchange (empty for direct queue)
-		queueName, // routing key = queue name
-		false,     // mandatory
-		false,     // immediate
-		amqpMessage,
-	)
-	if err != nil {
-		return fmt.Errorf("rabbitmq: failed to publish to %s: %w", queueName, err)
-	}
-
-	fmt.Printf("Published message to queue: %s\n", queueName)
 	return nil
 }

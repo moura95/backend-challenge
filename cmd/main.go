@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
 	"log"
+	"sync"
 
+	emailUC "github.com/moura95/backend-challenge/internal/application/usecases/email"
 	"github.com/moura95/backend-challenge/internal/infra/config"
 	"github.com/moura95/backend-challenge/internal/infra/database/postgres"
+	"github.com/moura95/backend-challenge/internal/infra/email/smtp"
 	"github.com/moura95/backend-challenge/internal/infra/http/gin"
 	"github.com/moura95/backend-challenge/internal/infra/messaging/rabbitmq"
+	"github.com/moura95/backend-challenge/internal/infra/repository/adapters"
+	"github.com/moura95/backend-challenge/internal/interfaces/http/handlers"
 	"go.uber.org/zap"
 )
 
@@ -34,6 +40,9 @@ func main() {
 	db := conn.DB()
 	sugar.Info("Database connection established")
 
+	// Initialize repositories
+	repositories := adapters.NewRepositories(db)
+
 	// Initialize RabbitMQ connection
 	rabbitConn := setupRabbitMQ(loadConfig, sugar)
 	if rabbitConn != nil {
@@ -41,8 +50,24 @@ func main() {
 		sugar.Info("RabbitMQ connection established")
 	}
 
-	// Run HTTP server - Passa SÓ a conexão RabbitMQ
+	// Setup context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+
+	// Start email consumer if RabbitMQ is available
+	if rabbitConn != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			startEmailConsumer(ctx, loadConfig, repositories, rabbitConn, sugar)
+		}()
+	}
+
+	// Run HTTP server
 	gin.RunGinServer(loadConfig, db, sugar, rabbitConn)
+
 }
 
 func setupRabbitMQ(cfg config.Config, logger *zap.SugaredLogger) *rabbitmq.Connection {
@@ -58,4 +83,37 @@ func setupRabbitMQ(cfg config.Config, logger *zap.SugaredLogger) *rabbitmq.Conne
 
 	logger.Info("RabbitMQ connection configured successfully")
 	return rabbitConn
+}
+
+func startEmailConsumer(
+	ctx context.Context,
+	cfg config.Config,
+	repositories *adapters.Repositories,
+	rabbit *rabbitmq.Connection,
+	logger *zap.SugaredLogger,
+) {
+	// Setup SMTP service
+	smtpService := smtp.NewSMTPServiceDev(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom)
+
+	// Setup email processing use case
+	processEmailUC := emailUC.NewProcessEmailQueueUseCase(
+		repositories.Email,
+		smtpService,
+	)
+
+	// Setup email consumer handler
+	emailHandler := handlers.NewEmailConsumerHandler(processEmailUC)
+
+	// Start consuming emails
+	err := rabbit.StartEmailConsumer(
+		ctx,
+		emailHandler.HandleEmailMessage,
+		"email_notifications",
+	)
+
+	if err != nil {
+		logger.Errorf("Email consumer stopped with error: %v", err)
+	} else {
+		logger.Info("Email consumer stopped gracefully")
+	}
 }
