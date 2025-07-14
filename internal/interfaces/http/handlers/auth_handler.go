@@ -19,7 +19,7 @@ type AuthHandler struct {
 
 type AuthResponse struct {
 	User  user.UserResponse `json:"user"`
-	Token string            `json:"token"`
+	Token string            `json:"token,omitempty"`
 }
 
 func NewAuthHandler(
@@ -60,8 +60,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 	}
 
 	response := AuthResponse{
-		User:  result.User.ToResponse(),
-		Token: result.Token,
+		User: result.User.ToResponse(),
 	}
 
 	c.JSON(http.StatusCreated, ginx.SuccessResponse(response))
