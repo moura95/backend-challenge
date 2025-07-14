@@ -7,7 +7,7 @@
 Aplicação desenvolvida seguindo princípios de DDD + Clean Architecture, implementando autenticação JWT, CRUD completo de usuários.
 ## 🚀 Demo
 
-- **Documentação Swagger**: [http://localhost:6000/swagger/index.html](http://localhost:6000/swagger/index.html)
+- **Documentação Swagger**: [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
 - **MailCatcher UI**: [http://localhost:1080](http://localhost:1080) (Interface para emails de desenvolvimento)
 - **RabbitMQ Management**: [http://localhost:15672](http://localhost:15672) (user: rabbitmq, pass: rabbitmq)
 
@@ -94,8 +94,8 @@ make start
 ```
 
 #### 4. Acesse os serviços
-- **API**: http://localhost:6000
-- **Swagger**: http://localhost:6000/swagger/index.html
+- **API**: http://localhost:8080
+- **Swagger**: http://localhost:8080/swagger/index.html
 - **MailCatcher**: http://localhost:1080
 - **RabbitMQ**: http://localhost:15672
 
@@ -149,7 +149,7 @@ make ci
 
 ### Criar Conta
 ```bash
-curl -X POST http://localhost:6000/api/auth/signup \
+curl -X POST http://localhost:8080/api/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
     "name": "João Silva",
@@ -160,7 +160,7 @@ curl -X POST http://localhost:6000/api/auth/signup \
 
 ### Login
 ```bash
-curl -X POST http://localhost:6000/api/auth/signin \
+curl -X POST http://localhost:8080/api/auth/signin \
   -H "Content-Type: application/json" \
   -d '{
     "email": "joao@example.com",
@@ -170,13 +170,13 @@ curl -X POST http://localhost:6000/api/auth/signin \
 
 ### Buscar Perfil (Autenticado)
 ```bash
-curl -X GET http://localhost:6000/api/account/me \
+curl -X GET http://localhost:8080/api/account/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Listar Usuários com Busca
 ```bash
-curl "http://localhost:6000/api/users?page=1&page_size=10&search=João" \
+curl "http://localhost:8080/api/users?page=1&page_size=10&search=João" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
