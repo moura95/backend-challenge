@@ -41,4 +41,6 @@ type SMTPConfig struct {
 
 type EmailService interface {
 	SendEmail(ctx context.Context, email *Email) error
+	SendEmailDev(ctx context.Context, email *Email) error
+	SendEmailAuto(ctx context.Context, email *Email) error
 }

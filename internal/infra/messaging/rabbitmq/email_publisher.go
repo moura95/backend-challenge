@@ -1,7 +1,6 @@
 package rabbitmq
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -11,17 +10,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func (c *Connection) PublishWelcomeEmail(ctx context.Context, data email.WelcomeEmailData) error {
-	message := email.QueueMessage{
-		EmailID: uuid.New(),
-		Type:    email.EmailTypeWelcome,
-		Data:    data,
-	}
-
-	return c.publishToEmailQueue(message)
-}
-
-func (c *Connection) publishToEmailQueue(message interface{}) error {
+func (c *Connection) PublishWelcomeEmailMessage(message email.QueueMessage) error {
 	if !c.IsConnected() {
 		return fmt.Errorf("rabbitmq: connection not available")
 	}

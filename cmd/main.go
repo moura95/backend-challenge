@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"sync"
+	"time"
 
 	emailUC "github.com/moura95/backend-challenge/internal/application/usecases/email"
 	"github.com/moura95/backend-challenge/internal/infra/config"
@@ -100,6 +101,12 @@ func startEmailConsumer(
 		repositories.Email,
 		smtpService,
 	)
+	go func() {
+		for {
+			time.Sleep(1 * time.Minute)
+			processEmailUC.ProcessPendingEmails(ctx, 50)
+		}
+	}()
 
 	// Setup email consumer handler
 	emailHandler := handlers.NewEmailConsumerHandler(processEmailUC)

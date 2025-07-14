@@ -10,7 +10,7 @@ import (
 
 type ProcessEmailQueueUseCase struct {
 	emailRepo        email.Repository
-	emailSender      email.EmailService // Domain service para envio
+	emailSender      email.EmailService
 	maxRetryAttempts int
 	retryDelay       time.Duration
 }
@@ -33,6 +33,9 @@ func (uc *ProcessEmailQueueUseCase) Execute(ctx context.Context, message email.Q
 		return fmt.Errorf("usecase: process email queue failed: %w", err)
 	}
 
+	fmt.Printf("Processing email ID: %s for user %s\n",
+		emailEntity.ID.String(), emailEntity.To)
+
 	// 2. Validar se email precisa ser processado
 	if err := uc.validateEmailForProcessing(emailEntity); err != nil {
 		return err
@@ -51,6 +54,7 @@ func (uc *ProcessEmailQueueUseCase) Execute(ctx context.Context, message email.Q
 
 func (uc *ProcessEmailQueueUseCase) validateEmailForProcessing(emailEntity *email.Email) error {
 	if emailEntity.Status == email.StatusSent {
+		fmt.Printf("Email ID %s already sent, skipping\n", emailEntity.ID.String())
 		return nil // Não é erro, apenas ignora
 	}
 
@@ -63,12 +67,7 @@ func (uc *ProcessEmailQueueUseCase) validateEmailForProcessing(emailEntity *emai
 }
 
 func (uc *ProcessEmailQueueUseCase) attemptEmailSend(ctx context.Context, emailEntity *email.Email) error {
-	fmt.Printf("Attempting to send email ID: %s (attempt %d/%d)\n",
-		emailEntity.ID.String(), emailEntity.Attempts+1, emailEntity.MaxAttempts)
-
-	emailEntity.Attempts++
-
-	err := uc.emailSender.SendEmail(ctx, emailEntity)
+	err := uc.emailSender.SendEmailAuto(ctx, emailEntity)
 	if err != nil {
 		return fmt.Errorf("email send failed: %w", err)
 	}
@@ -126,8 +125,8 @@ func (uc *ProcessEmailQueueUseCase) ProcessPendingEmails(ctx context.Context, ba
 
 	for _, emailEntity := range pendingEmails {
 		message := email.QueueMessage{
+			EmailID: emailEntity.ID, //
 			Type:    emailEntity.Type,
-			EmailID: emailEntity.ID,
 		}
 
 		err := uc.Execute(ctx, message)

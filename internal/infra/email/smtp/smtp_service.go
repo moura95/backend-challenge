@@ -57,7 +57,6 @@ func (s *SMTPService) SendEmail(ctx context.Context, emailEntity *email.Email) e
 	return nil
 }
 
-// Versão sem autenticação para desenvolvimento (MailCatcher)
 func NewSMTPServiceDev(host string, port int, from string) *SMTPService {
 	return &SMTPService{
 		config: email.SMTPConfig{
