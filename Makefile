@@ -52,15 +52,10 @@ fmt:
 vet:
 	go vet ./...
 
-# Docker
-build:
-	docker build -t backend-challenge:latest -f deployments/build/Dockerfile .
-
 # Complete workflows
 ci:
 	make fmt
 	make vet
 	make test
-	make build
 
-.PHONY: migrate-up migrate-down down up sqlc start run restart swag test test-domain test-coverage fmt vet build ci
+.PHONY: migrate-up migrate-down down up sqlc start run restart swag test test-domain test-coverage fmt vet ci
