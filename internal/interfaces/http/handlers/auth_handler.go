@@ -39,8 +39,8 @@ func NewAuthHandler(
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body auth.SignUpRequest true "Sign up request"
-// @Success 201 {object} ginx.Response{data=AuthResponse}
+// @Param request body github_com_moura95_backend-challenge_internal_application_usecases_auth.SignUpRequest true "Sign up request"
+// @Success 201 {object} ginx.Response{data=internal_interfaces_http_handlers.AuthResponse}
 // @Failure 400 {object} ginx.Response
 // @Failure 409 {object} ginx.Response
 // @Router /auth/signup [post]
@@ -71,8 +71,8 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body auth.SignInRequest true "Sign in request"
-// @Success 200 {object} ginx.Response{data=AuthResponse}
+// @Param request body github_com_moura95_backend-challenge_internal_application_usecases_auth.SignInRequest true "Sign in request"
+// @Success 200 {object} ginx.Response{data=internal_interfaces_http_handlers.AuthResponse}
 // @Failure 400 {object} ginx.Response
 // @Failure 401 {object} ginx.Response
 // @Router /auth/signin [post]

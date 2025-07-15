@@ -16,7 +16,29 @@ import (
 	"github.com/moura95/backend-challenge/internal/infra/repository/adapters"
 	"github.com/moura95/backend-challenge/internal/interfaces/http/handlers"
 	"go.uber.org/zap"
+
+	_ "github.com/moura95/backend-challenge/docs"
 )
+
+// @title           Backend Challenge API
+// @version         1.0
+// @description     API RESTful completa para gestão de usuários com Clean Architecture + DDD
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token. Example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 func main() {
 	// Load configuration
@@ -67,9 +89,13 @@ func main() {
 		}()
 	}
 
+	// Log Swagger information
+	sugar.Info("🚀 Starting Backend Challenge API")
+	sugar.Info("📚 Swagger UI: http://localhost:8080/swagger/index.html")
+	sugar.Info("🔐 Use Bearer tokens for authentication")
+
 	// Run HTTP server
 	gin.RunGinServer(loadConfig, db, sugar, rabbitConn)
-
 }
 
 func setupRabbitMQ(cfg config.Config, logger *zap.SugaredLogger) *rabbitmq.Connection {

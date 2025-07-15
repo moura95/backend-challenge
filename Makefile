@@ -23,8 +23,7 @@ sqlc:
 	sqlc generate
 
 swag:
-	swag init -g cmd/main.go
-
+	swag init -g cmd/main.go -d . --parseInternal --parseDependency
 # Local development
 run:
 	go run cmd/main.go

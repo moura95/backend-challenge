@@ -49,7 +49,7 @@ func NewUserHandler(
 // @Tags user
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {object} ginx.Response{data=user.UserResponse}
+// @Success 200 {object} ginx.Response{data=github_com_moura95_backend-challenge_internal_domain_user.UserResponse}
 // @Failure 401 {object} ginx.Response
 // @Failure 404 {object} ginx.Response
 // @Router /account/me [get]
@@ -76,8 +76,8 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param request body UpdateUserRequest true "Update user request"
-// @Success 200 {object} ginx.Response{data=user.UserResponse}
+// @Param request body handlers.UpdateUserRequest true "Update user request"
+// @Success 200 {object} ginx.Response{data=github_com_moura95_backend-challenge_internal_domain_user.UserResponse}
 // @Failure 400 {object} ginx.Response
 // @Failure 401 {object} ginx.Response
 // @Failure 409 {object} ginx.Response
@@ -143,7 +143,7 @@ func (h *UserHandler) DeleteProfile(c *gin.Context) {
 // @Param page_size query int false "Page size" default(10)
 // @Param search query string false "Search by name or email"
 // @Produce json
-// @Success 200 {object} ginx.Response
+// @Success 200 {object} ginx.Response{data=handlers.ListUsersResponse}
 // @Failure 400 {object} ginx.Response
 // @Failure 401 {object} ginx.Response
 // @Router /users [get]

@@ -16,46 +16,37 @@ import (
 	"github.com/moura95/backend-challenge/internal/interfaces/http/middlewares"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"github.com/swaggo/swag/example/basic/docs"
 	"go.uber.org/zap"
+
+	_ "github.com/moura95/backend-challenge/docs"
 )
 
 type Server struct {
 	router *gin.Engine
 	config *config.Config
 	logger *zap.SugaredLogger
-	rabbit *rabbitmq.Connection // 👈 SÓ o RabbitMQ!
+	rabbit *rabbitmq.Connection
 }
 
-// @title           Backend Challenge
-// @version         1.0
-// @description     Backend Challenge API
-// @termsOfService  http://swagger.io/terms/
-
-// @contact.name   API Support
-// @contact.url    http://www.swagger.io/support
-
-// @license.name  Apache 2.0
-// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host      localhost:6000
-// @BasePath  /api
 func NewServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger, rabbit *rabbitmq.Connection) *Server {
 	server := &Server{
 		config: &cfg,
 		logger: log,
-		rabbit: rabbit, // 👈 Uma dependência só!
+		rabbit: rabbit,
 	}
 
 	router := gin.Default()
-	docs.SwaggerInfo.BasePath = "/api"
 
+	// Health check endpoint
 	router.GET("/healthz", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})
 
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	// 🚨 SWAGGER CONFIGURATION - URL específica para o doc.json
+	url := ginSwagger.URL("http://localhost:8080/swagger/doc.json")
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, url))
 
+	// CORS configuration
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowCredentials = true
@@ -63,6 +54,7 @@ func NewServer(cfg config.Config, db *sqlx.DB, log *zap.SugaredLogger, rabbit *r
 	corsConfig.AddAllowHeaders("Content-Type")
 	router.Use(cors.New(corsConfig))
 
+	// Setup routes
 	createRoutes(cfg, db, router, log, rabbit)
 
 	server.router = router
@@ -79,22 +71,22 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 		log.Fatalf("Failed to create token maker: %v", err)
 	}
 
-	// Auth use cases - SÓ recebe a conexão RabbitMQ
+	// Initialize use cases
 	signUpUC := authUC.NewSignUpUseCase(
 		repositories.User,
 		repositories.Email,
 		tokenMaker,
-		rabbit, //
+		rabbit,
 	)
 	signInUC := authUC.NewSignInUseCase(repositories.User, tokenMaker)
 	verifyTokenUC := authUC.NewVerifyTokenUseCase(repositories.User, tokenMaker)
 
-	// User use cases - Também podem receber rabbit se precisarem
 	getUserProfileUC := userUC.NewGetUserProfileUseCase(repositories.User)
 	updateUserUC := userUC.NewUpdateUserUseCase(repositories.User)
 	deleteUserUC := userUC.NewDeleteUserUseCase(repositories.User)
 	listUsersUC := userUC.NewListUsersUseCase(repositories.User)
 
+	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(signUpUC, signInUC, verifyTokenUC)
 	userHandler := handlers.NewUserHandler(getUserProfileUC, updateUserUC, deleteUserUC, listUsersUC)
 
@@ -127,6 +119,7 @@ func createRoutes(cfg config.Config, db *sqlx.DB, router *gin.Engine, log *zap.S
 
 func (s *Server) Start(address string) error {
 	s.logger.Infof("Starting server on %s", address)
+	s.logger.Infof("Swagger UI available at: http://localhost:8080/swagger/index.html")
 	return s.router.Run(address)
 }
 

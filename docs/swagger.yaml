@@ -1,12 +1,13 @@
+basePath: /api
 definitions:
-  auth.SignInRequest:
+  github_com_moura95_backend-challenge_internal_application_usecases_auth.SignInRequest:
     properties:
       email:
         type: string
       password:
         type: string
     type: object
-  auth.SignUpRequest:
+  github_com_moura95_backend-challenge_internal_application_usecases_auth.SignUpRequest:
     properties:
       email:
         type: string
@@ -22,26 +23,7 @@ definitions:
     - name
     - password
     type: object
-  ginx.Response:
-    properties:
-      data: {}
-      error: {}
-    type: object
-  handlers.AuthResponse:
-    properties:
-      token:
-        type: string
-      user:
-        $ref: '#/definitions/user.UserResponse'
-    type: object
-  handlers.UpdateUserRequest:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-    type: object
-  user.UserResponse:
+  github_com_moura95_backend-challenge_internal_domain_user.UserResponse:
     properties:
       created_at:
         type: string
@@ -52,8 +34,50 @@ definitions:
       name:
         type: string
     type: object
+  github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response:
+    properties:
+      data: {}
+      error: {}
+    type: object
+  internal_interfaces_http_handlers.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_moura95_backend-challenge_internal_domain_user.UserResponse'
+    type: object
+  internal_interfaces_http_handlers.ListUsersResponse:
+    properties:
+      page:
+        type: integer
+      total:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/github_com_moura95_backend-challenge_internal_domain_user.UserResponse'
+        type: array
+    type: object
+  internal_interfaces_http_handlers.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API RESTful completa para gestão de usuários com Clean Architecture
+    + DDD
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Backend Challenge API
+  version: "1.0"
 paths:
   /account/me:
     delete:
@@ -64,11 +88,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
       security:
       - BearerAuth: []
       summary: Delete user profile
@@ -83,19 +107,19 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/ginx.Response'
+            - $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/user.UserResponse'
+                  $ref: '#/definitions/github_com_moura95_backend-challenge_internal_domain_user.UserResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
       security:
       - BearerAuth: []
       summary: Get user profile
@@ -111,7 +135,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.UpdateUserRequest'
+          $ref: '#/definitions/internal_interfaces_http_handlers.UpdateUserRequest'
       produces:
       - application/json
       responses:
@@ -119,23 +143,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/ginx.Response'
+            - $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/user.UserResponse'
+                  $ref: '#/definitions/github_com_moura95_backend-challenge_internal_domain_user.UserResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
       security:
       - BearerAuth: []
       summary: Update user profile
@@ -152,7 +176,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.SignInRequest'
+          $ref: '#/definitions/github_com_moura95_backend-challenge_internal_application_usecases_auth.SignInRequest'
       produces:
       - application/json
       responses:
@@ -160,19 +184,19 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/ginx.Response'
+            - $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/handlers.AuthResponse'
+                  $ref: '#/definitions/internal_interfaces_http_handlers.AuthResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
       summary: Sign in user
       tags:
       - auth
@@ -187,7 +211,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.SignUpRequest'
+          $ref: '#/definitions/github_com_moura95_backend-challenge_internal_application_usecases_auth.SignUpRequest'
       produces:
       - application/json
       responses:
@@ -195,19 +219,19 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/ginx.Response'
+            - $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/handlers.AuthResponse'
+                  $ref: '#/definitions/internal_interfaces_http_handlers.AuthResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
       summary: Sign up a new user
       tags:
       - auth
@@ -235,18 +259,30 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ginx.Response'
+            allOf:
+            - $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_interfaces_http_handlers.ListUsersResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ginx.Response'
+            $ref: '#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response'
       security:
       - BearerAuth: []
       summary: List users
       tags:
       - user
+securityDefinitions:
+  BearerAuth:
+    description: 'Type "Bearer" followed by a space and JWT token. Example: "Bearer
+      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."'
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

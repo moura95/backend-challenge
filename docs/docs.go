@@ -9,7 +9,16 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -36,13 +45,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ginx.Response"
+                                    "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/user.UserResponse"
+                                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_domain_user.UserResponse"
                                         }
                                     }
                                 }
@@ -52,13 +61,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     }
                 }
@@ -87,7 +96,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.UpdateUserRequest"
+                            "$ref": "#/definitions/internal_interfaces_http_handlers.UpdateUserRequest"
                         }
                     }
                 ],
@@ -97,13 +106,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ginx.Response"
+                                    "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/user.UserResponse"
+                                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_domain_user.UserResponse"
                                         }
                                     }
                                 }
@@ -113,19 +122,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     }
                 }
@@ -148,13 +157,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     }
                 }
@@ -180,7 +189,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.SignInRequest"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_application_usecases_auth.SignInRequest"
                         }
                     }
                 ],
@@ -190,13 +199,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ginx.Response"
+                                    "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handlers.AuthResponse"
+                                            "$ref": "#/definitions/internal_interfaces_http_handlers.AuthResponse"
                                         }
                                     }
                                 }
@@ -206,13 +215,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     }
                 }
@@ -238,7 +247,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.SignUpRequest"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_application_usecases_auth.SignUpRequest"
                         }
                     }
                 ],
@@ -248,13 +257,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/ginx.Response"
+                                    "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handlers.AuthResponse"
+                                            "$ref": "#/definitions/internal_interfaces_http_handlers.AuthResponse"
                                         }
                                     }
                                 }
@@ -264,13 +273,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     }
                 }
@@ -317,19 +326,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_interfaces_http_handlers.ListUsersResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ginx.Response"
+                            "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response"
                         }
                     }
                 }
@@ -337,7 +358,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "auth.SignInRequest": {
+        "github_com_moura95_backend-challenge_internal_application_usecases_auth.SignInRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -348,7 +369,7 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.SignUpRequest": {
+        "github_com_moura95_backend-challenge_internal_application_usecases_auth.SignUpRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -370,36 +391,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ginx.Response": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "error": {}
-            }
-        },
-        "handlers.AuthResponse": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/user.UserResponse"
-                }
-            }
-        },
-        "handlers.UpdateUserRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "user.UserResponse": {
+        "github_com_moura95_backend-challenge_internal_domain_user.UserResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -415,18 +407,72 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "github_com_moura95_backend-challenge_internal_interfaces_http_ginx.Response": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error": {}
+            }
+        },
+        "internal_interfaces_http_handlers.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_domain_user.UserResponse"
+                }
+            }
+        },
+        "internal_interfaces_http_handlers.ListUsersResponse": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_moura95_backend-challenge_internal_domain_user.UserResponse"
+                    }
+                }
+            }
+        },
+        "internal_interfaces_http_handlers.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token. Example: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Backend Challenge API",
+	Description:      "API RESTful completa para gestão de usuários com Clean Architecture + DDD",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }
