@@ -1,0 +1,79 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: psql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - database:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3.7-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbitmq
+      - RABBITMQ_DEFAULT_PASS=rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  mailcatcher:
+    image: schickling/mailcatcher
+    container_name: mailcatcher
+    ports:
+      - "1025:1025"
+      - "1080:1080"
+
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - type: bind
+        source: ./internal/infra/database/migrations
+        target: /migrations
+    command: [ "-path", "/migrations", "-database", "postgres://postgres:postgres@psql:5432/postgres?sslmode=disable", "up" ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_SOURCE=postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable
+      - RABBITMQ_URL=amqp://rabbitmq:rabbitmq@rabbitmq:5672/
+      - SMTP_HOST=mailcatcher
+      - SMTP_PORT=1025
+      - SMTP_FROM=noreply@backend-challenge.com
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailcatcher:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+
+
+volumes:
+  database:
