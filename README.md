@@ -28,7 +28,7 @@ Aplicação desenvolvida seguindo princípios de DDD + Clean Architecture, imple
 ## 🛠️ Tecnologias
 
 **Backend:**
-- Go 1.21+
+- Go 1.24+
 - Gin Web Framework
 - PostgreSQL
 - RabbitMQ (Messaging)
@@ -52,7 +52,10 @@ Aplicação desenvolvida seguindo princípios de DDD + Clean Architecture, imple
 - Make (para comandos do Makefile)
 
 ### Instalação das Ferramentas
-
+#### Baixe a Collection Postman
+```
+docs/Backend-Challenge.postman_collection.json
+```
 #### Golang-Migrate
 ```bash
 # MacOS
@@ -236,15 +239,6 @@ internal/
         ├── handlers/           # HTTP request handlers
         ├── middlewares/        # Authentication, CORS, etc
         └── ginx/              # HTTP utilities
-
-deployments/                    # Deployment configurations
-├── docker-compose/            # Docker Compose setup
-└── build/                     # Dockerfile
-
-tests/                         # Test organization
-├── domain/                    # Domain tests
-├── integration/               # Integration tests
-└── load/                      # Load testing (Artillery)
 ```
 
 ### 🎯 Camadas da Clean Architecture
