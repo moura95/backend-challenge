@@ -47,7 +47,7 @@ Aplicação desenvolvida seguindo princípios de DDD + Clean Architecture, imple
 
 ## 📋 Pré-requisitos
 
-- Go 1.21 ou superior
+- Go 1.24 ou superior
 - Docker e Docker Compose
 - Make (para comandos do Makefile)
 
